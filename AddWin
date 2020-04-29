@@ -1,0 +1,174 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.NumberFormat;
+
+public class AddWin
+{
+    //类的元素
+    Frame win;
+    Label lb_name, lb_class, lb_yuwen, lb_shuxue, lb_yingyu, lb_wuli, lb_huaxue;
+    TextField tf_name, tf_class, tf_yuwen, tf_shuxue, tf_yingyu, tf_wuli, tf_huaxue;
+    Button btn_ok, btn_cancel;
+
+    AddWin()
+    {
+        init();
+    }
+
+    void init()
+    {
+        //初始化窗口
+        win = new Frame("添加新同学");
+        win.setSize(400, 120);
+        win.setLocation(400, 400);
+        win.setLayout(new FlowLayout());
+
+        lb_name = new Label("姓名");
+        lb_class = new Label("班级");
+        lb_yuwen = new Label("语文");
+        lb_shuxue = new Label("数学");
+        lb_yingyu = new Label("英语");
+        lb_wuli = new Label("物理");
+        lb_huaxue = new Label("化学");
+
+        tf_name = new TextField(8);
+        tf_class = new TextField(8);
+        tf_yuwen = new TextField(3);
+        tf_shuxue = new TextField(3);
+        tf_yingyu = new TextField(3);
+        tf_wuli = new TextField(3);
+        tf_huaxue = new TextField(3);
+
+        btn_ok = new Button("确定");
+        btn_cancel = new Button("取消");
+
+        win.add(lb_name);
+        win.add(tf_name);
+        win.add(lb_class);
+        win.add(tf_class);
+        win.add(lb_yuwen);
+        win.add(tf_yuwen);
+        win.add(lb_shuxue);
+        win.add(tf_shuxue);
+        win.add(lb_yingyu);
+        win.add(tf_yingyu);
+        win.add(lb_wuli);
+        win.add(tf_wuli);
+        win.add(lb_huaxue);
+        win.add(tf_huaxue);
+
+        win.add(btn_ok);
+        win.add(btn_cancel);
+
+        myEvent();
+        win.setVisible(true);
+    }
+
+    void myEvent()
+    {
+        win.addWindowListener(new WindowAdapter()
+        {
+            @Override
+            public void windowClosing(WindowEvent e)
+            {
+                win.setVisible(false);
+            }
+        });
+
+        btn_cancel.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                win.setVisible(false);
+            }
+        });
+
+        //对确定按钮添加时间监听器
+        btn_ok.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                add();
+            }
+        });
+
+        //对取消按钮添加时间监听器
+        btn_cancel.addActionListener(new ActionListener()
+        {
+            @Override
+            public void actionPerformed(ActionEvent e)
+            {
+                win.setVisible(false);
+            }
+        });
+
+
+    }
+
+    void add()
+    {
+        DBConn db = new DBConn();
+        int yuwen_int = Integer.parseInt(tf_yuwen.getText());
+        int shuxue_int = Integer.parseInt(tf_shuxue.getText());
+        int yingyu_int = Integer.parseInt(tf_yingyu.getText());
+        int wuli_int = Integer.parseInt(tf_wuli.getText());
+        int huaxue_int = Integer.parseInt(tf_huaxue.getText());
+        db.prepare("SELECT * FROM table_score WHERE stu_name = ?");
+        db.sheZifu(1, tf_name.getText());
+        ResultSet rs = db.query();
+        try
+        {
+            if (tf_name.getText().strip().length() * tf_class.getText().strip().length()
+                    * tf_yuwen.getText().strip().length() * tf_shuxue.getText().strip().length()
+                    * tf_yingyu.getText().strip().length() * tf_wuli.getText().strip().length()
+                    * tf_huaxue.getText().strip().length() == 0)
+            {
+                new AddDia(win, "错误", "信息不全请补充完整", "确定");
+            }
+            else if (rs.next())
+            {
+                new AddDia(win, "注意", "输入姓名重复", "确定");
+            }
+            else
+            {
+                db = new DBConn();
+                db.prepare("INSERT INTO table_score(stu_name,stu_class,yuwen,shuxue,yingyu,wuli,huaxue) VALUES(?,?,?,?,?,?,?)");
+                db.sheZifu(1, tf_name.getText());
+                db.sheZifu(2, tf_class.getText());
+                try
+                {
+                    db.sheZhengxing(3, yuwen_int);
+                    db.sheZhengxing(4, shuxue_int);
+                    db.sheZhengxing(5, yingyu_int);
+                    db.sheZhengxing(6, wuli_int);
+                    db.sheZhengxing(7, huaxue_int);
+                    if (yuwen_int < 0 || yuwen_int > 100 || shuxue_int < 0 || shuxue_int > 100 || yingyu_int < 0 || yingyu_int > 100
+                            || wuli_int > 100 || wuli_int < 0 || huaxue_int > 100 || huaxue_int < 0)
+                    {
+                        throw new NumberFormatException();
+                    }
+                    if (db.update() != 0)
+                    {
+                        win.setVisible(false);
+                        new AddDia(win, "提示", "添加成功", "确定");
+                    }
+                }
+                catch (NumberFormatException e)
+                {
+                    new AddDia(win, "提示", "非法输入", "确定");
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+
+    }
+}
+
